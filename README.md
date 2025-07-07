@@ -8,7 +8,7 @@ Um **sistema de registro de despesas pessoais** simplificado, desenvolvido como 
 
 - **Frontend:** https://affectionate-solace-production.up.railway.app  
 - **API (backend):** https://projwebrec-production.up.railway.app
-- **Vídeo demonstrativo:** https://\<link-do-vídeo\>
+- **Vídeo demonstrativo:** https://youtu.be/97tedgOzB3g
 
 ---
 
