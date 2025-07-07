@@ -1,10 +1,12 @@
 import sqlite3
+import os
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
 DATABASE = 'db.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 
 def get_db():
     db = getattr(g, '_database', None)
