@@ -1,24 +1,30 @@
 import os
 import pymysql
-pymysql.install_as_MySQLdb()  # usa pymysql como driver MySQLdb
+pymysql.install_as_MySQLdb()  # faz o pymysql responder como MySQLdb
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# --- Configuração da aplicação ---
+# --- Inicialização do app ---
 app = Flask(__name__)
 CORS(app)
 
-# Lê DATABASE_URL (MySQL no Railway). Se não definida, usa SQLite local.
-db_url = os.getenv('DATABASE_URL') or 'sqlite:///db.sqlite3'
-print(f'>>> Conectando via SQLALCHEMY_DATABASE_URI = {db_url}')
+# --- Configuração do banco ---
+# Lê a URL do Railway (ou usa SQLite local)
+raw_url = os.getenv('DATABASE_URL')
+if raw_url and raw_url.startswith('mysql://'):
+    # ajusta para o driver pymysql
+    db_url = raw_url.replace('mysql://', 'mysql+pymysql://', 1)
+else:
+    db_url = raw_url or 'sqlite:///db.sqlite3'
 
+print(f'>>> Conectando via SQLALCHEMY_DATABASE_URI = {db_url}')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(app)
+db      = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
@@ -66,13 +72,12 @@ def list_categories():
 @app.route('/categories', methods=['POST'])
 def create_category():
     data = request.get_json() or {}
-    name = data.get('name', '').strip()
+    name = data.get('name','').strip()
     if not name:
         return jsonify(error='Nome é obrigatório'), 400
     if Category.query.get(name):
         return jsonify(error='Já existe'), 409
-    cat = Category(name=name)
-    db.session.add(cat)
+    db.session.add(Category(name=name))
     db.session.commit()
     return jsonify(created=name), 201
 
@@ -80,7 +85,7 @@ def create_category():
 # --- Expenses API ---
 @app.route('/expenses', methods=['GET'])
 def list_expenses():
-    param = request.args.get('category', '').strip()
+    param = request.args.get('category','').strip()
     q = Expense.query
     if param:
         cats = [c.strip() for c in param.split(',') if c.strip()]
@@ -110,12 +115,7 @@ def create_expense():
     if not Category.query.get(categoria):
         return jsonify(error='Categoria inválida'), 400
 
-    e = Expense(
-        valor=valor,
-        descricao=descricao,
-        categoria=categoria,
-        data_registro=dreg
-    )
+    e = Expense(valor=valor, descricao=descricao, categoria=categoria, data_registro=dreg)
     db.session.add(e)
     db.session.commit()
     return jsonify(id=e.id), 201
@@ -156,6 +156,6 @@ def delete_expense(expense_id):
     return jsonify(deleted=expense_id), 200
 
 
-# --- Main ---
+# --- Entrada ---
 if __name__ == '__main__':
     app.run(debug=True)
