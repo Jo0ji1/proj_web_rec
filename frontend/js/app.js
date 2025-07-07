@@ -1,5 +1,5 @@
 // js/app.js
-const API = 'http://127.0.0.1:5000';
+const API = 'https://projwebrec-production.up.railway.app';
 
 let allExpenses = [];
 let categories   = [];
