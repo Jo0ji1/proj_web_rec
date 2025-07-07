@@ -8,9 +8,11 @@ from flask_migrate import Migrate
 app = Flask(__name__)
 CORS(app)
 
-# Lê DATABASE_URL (por ex. mysql://user:pass@host:port/database)
-# Em dev local você pode setar um fallback SQLite:
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
+# Lê DATABASE_URL, mas se vier vazia ou None, usa sqlite local
+db_url = os.getenv('DATABASE_URL') or 'sqlite:///db.sqlite3'
+print(f'>>> Conectando via SQLALCHEMY_DATABASE_URI = {db_url}')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -45,7 +47,6 @@ class Expense(db.Model):
 @app.route('/health')
 def health_check():
     try:
-        # executa SELECT 1
         db.session.execute('SELECT 1')
         return jsonify(status='ok', db='connected')
     except Exception as e:
@@ -61,8 +62,8 @@ def list_categories():
 
 @app.route('/categories', methods=['POST'])
 def create_category():
-    payload = request.get_json() or {}
-    name = payload.get('name', '').strip()
+    data = request.get_json() or {}
+    name = data.get('name', '').strip()
     if not name:
         return jsonify(error='Nome é obrigatório'), 400
     if Category.query.get(name):
@@ -76,7 +77,6 @@ def create_category():
 # --- Expenses API ---
 @app.route('/expenses', methods=['GET'])
 def list_expenses():
-    # filtro por ?category=Cat1,Cat2
     param = request.args.get('category', '').strip()
     q = Expense.query
     if param:
@@ -96,7 +96,7 @@ def get_expense(expense_id):
 
 @app.route('/expenses', methods=['POST'])
 def create_expense():
-    data = request.get_json() or {}
+    data      = request.get_json() or {}
     valor     = data.get('valor')
     descricao = (data.get('descricao') or '').strip()
     categoria = (data.get('categoria') or '').strip()
@@ -107,12 +107,7 @@ def create_expense():
     if not Category.query.get(categoria):
         return jsonify(error='Categoria inválida'), 400
 
-    e = Expense(
-        valor=valor,
-        descricao=descricao,
-        categoria=categoria,
-        data_registro=dreg  # None → default NOW()
-    )
+    e = Expense(valor=valor, descricao=descricao, categoria=categoria, data_registro=dreg)
     db.session.add(e)
     db.session.commit()
     return jsonify(id=e.id), 201
