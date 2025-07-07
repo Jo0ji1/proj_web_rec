@@ -34,8 +34,7 @@ Um **sistema de registro de despesas pessoais** simplificado, desenvolvido como 
        - `GET /expenses/:id`, `PUT /expenses/:id`, `DELETE /expenses/:id`  
   3. **Entrega**  
      - Repositório GitHub com histórico organizado  
-     - Deploy no Railway (backend) e Railway Static / Netlify (frontend)  
-     - Vídeo ≤ 5 min mostrando todas as funcionalidades  
+     - Deploy no Railway (backend) e Railway Static / Netlify (frontend)
      - `README.md` com instruções claras  
 
 ---
@@ -52,6 +51,27 @@ Um **sistema de registro de despesas pessoais** simplificado, desenvolvido como 
 - **Banco de Dados:** MySQL (Railway plugin)  
 - **Deploy:** Railway.app (Docker/Nixpacks)  
 - **Versionamento:** Git + GitHub  
+
+---
+
+## ⚙️ Arquitetura
+
+A aplicação segue um padrão **cliente-servidor**:
+
+1. **Frontend**  
+   - Servido como site estático (HTML/CSS/JS)  
+   - Carrega bibliotecas em `lib/` (Bootstrap, Chart.js) e código em `js/app.js`  
+   - Faz chamadas **fetch** para a API usando a variável `API_URL`  
+
+2. **Backend**  
+   - Flask expõe endpoints RESTful e faz CRUD no banco MySQL  
+   - SQLAlchemy gerencia modelos e migrations  
+   - Gunicorn serve o WSGI em produção  
+
+3. **Comunicação**  
+   - O frontend envia requisições AJAX (`fetch`) para `https://<API_URL>/expenses` e `/categories`  
+   - Respostas JSON são processadas em tempo real, sem recarregar a página  
+   - Erros são capturados e exibidos via toasts/alerts  
 
 ---
 
