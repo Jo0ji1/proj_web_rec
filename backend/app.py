@@ -1,21 +1,20 @@
 import os
 import pymysql
-pymysql.install_as_MySQLdb()  # faz o pymysql responder como MySQLdb
+pymysql.install_as_MySQLdb()  # usa pymysql como driver MySQLdb
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from sqlalchemy import text  # necessário para expressões SQL textuais
 
-# --- Inicialização do app ---
+# --- Configuração do app ---
 app = Flask(__name__)
 CORS(app)
 
-# --- Configuração do banco ---
-# Lê a URL do Railway (ou usa SQLite local)
+# Lê DATABASE_URL; ajusta prefixo para pymysql se for MySQL
 raw_url = os.getenv('DATABASE_URL')
 if raw_url and raw_url.startswith('mysql://'):
-    # ajusta para o driver pymysql
     db_url = raw_url.replace('mysql://', 'mysql+pymysql://', 1)
 else:
     db_url = raw_url or 'sqlite:///db.sqlite3'
@@ -24,7 +23,7 @@ print(f'>>> Conectando via SQLALCHEMY_DATABASE_URI = {db_url}')
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db      = SQLAlchemy(app)
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
 
@@ -56,7 +55,8 @@ class Expense(db.Model):
 @app.route('/health')
 def health_check():
     try:
-        db.session.execute('SELECT 1')
+        # usar text(...) para compatibilidade com SQLAlchemy 2.x
+        db.session.execute(text('SELECT 1'))
         return jsonify(status='ok', db='connected')
     except Exception as e:
         return jsonify(status='error', db=str(e)), 500
@@ -72,7 +72,7 @@ def list_categories():
 @app.route('/categories', methods=['POST'])
 def create_category():
     data = request.get_json() or {}
-    name = data.get('name','').strip()
+    name = data.get('name', '').strip()
     if not name:
         return jsonify(error='Nome é obrigatório'), 400
     if Category.query.get(name):
@@ -85,7 +85,7 @@ def create_category():
 # --- Expenses API ---
 @app.route('/expenses', methods=['GET'])
 def list_expenses():
-    param = request.args.get('category','').strip()
+    param = request.args.get('category', '').strip()
     q = Expense.query
     if param:
         cats = [c.strip() for c in param.split(',') if c.strip()]
@@ -156,6 +156,6 @@ def delete_expense(expense_id):
     return jsonify(deleted=expense_id), 200
 
 
-# --- Entrada ---
+# --- Main ---
 if __name__ == '__main__':
     app.run(debug=True)
