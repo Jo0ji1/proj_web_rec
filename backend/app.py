@@ -2,15 +2,12 @@ import sqlite3
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
-# --- CONFIGURAÇÃO DO FLASK E CORS ---
+# --- CONFIGURAÇÃO ---
 app = Flask(__name__)
 CORS(app)
-
-# --- CONFIGURAÇÃO DO BANCO ---
 DATABASE = 'db.sqlite3'
 
 def get_db():
-    """Abre conexão com o SQLite e guarda em g._database."""
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE)
@@ -19,13 +16,11 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
-    """Fecha a conexão ao final de cada request."""
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
 def init_db():
-    """Cria a tabela expenses caso não exista."""
     sql = """
     CREATE TABLE IF NOT EXISTS expenses (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,13 +34,12 @@ def init_db():
     db.execute(sql)
     db.commit()
 
-# Inicializa o banco ao iniciar a aplicação
 with app.app_context():
     init_db()
 
-# --- ROTAS RESTful ---
+# --- ROTAS ---
 
-# 1) LISTAR despesas (GET /expenses?category=…)
+# 1) LISTAR todas (GET /expenses)
 @app.route('/expenses', methods=['GET'])
 def list_expenses():
     categoria = request.args.get('category')
@@ -55,10 +49,19 @@ def list_expenses():
     else:
         cur = db.execute('SELECT * FROM expenses')
     rows = cur.fetchall()
-    expenses = [dict(r) for r in rows]
-    return jsonify(expenses), 200
+    return jsonify([dict(r) for r in rows]), 200
 
-# 2) CRIAR despesa (POST /expenses)
+# 2) BUSCAR uma só (GET /expenses/<id>)
+@app.route('/expenses/<int:expense_id>', methods=['GET'])
+def get_expense(expense_id):
+    db = get_db()
+    cur = db.execute('SELECT * FROM expenses WHERE id = ?', (expense_id,))
+    row = cur.fetchone()
+    if row is None:
+        return jsonify({'error': 'Despesa não encontrada'}), 404
+    return jsonify(dict(row)), 200
+
+# 3) CRIAR (POST /expenses)
 @app.route('/expenses', methods=['POST'])
 def create_expense():
     data = request.get_json()
@@ -75,7 +78,7 @@ def create_expense():
     db.commit()
     return jsonify({'id': cur.lastrowid}), 201
 
-# 3) ATUALIZAR despesa (PUT /expenses/<id>)
+# 4) ATUALIZAR (PUT /expenses/<id>)
 @app.route('/expenses/<int:expense_id>', methods=['PUT'])
 def update_expense(expense_id):
     data = request.get_json()
@@ -92,7 +95,7 @@ def update_expense(expense_id):
     db.commit()
     return jsonify({'updated': expense_id}), 200
 
-# 4) EXCLUIR despesa (DELETE /expenses/<id>)
+# 5) EXCLUIR (DELETE /expenses/<id>)
 @app.route('/expenses/<int:expense_id>', methods=['DELETE'])
 def delete_expense(expense_id):
     db = get_db()
@@ -100,6 +103,6 @@ def delete_expense(expense_id):
     db.commit()
     return jsonify({'deleted': expense_id}), 200
 
-# --- RODA O SERVIDOR EM MODO DESENVOLVIMENTO ---
+# --- SERVER ---
 if __name__ == '__main__':
     app.run(debug=True)
