@@ -184,6 +184,12 @@
     &copy; 2025 DespesasApp
   </footer>
 
+  <!-- Injeção da URL da API em produção -->
+  <script>
+    // Em produção, o Railway serve essa URL como variável de ambiente
+    window.__API_URL__ = "https://<seu-backend>.up.railway.app";
+  </script>
+  
   <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="lib/chart.js/dist/chart.umd.js"></script>
   <script src="js/app.js"></script>
