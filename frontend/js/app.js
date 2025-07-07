@@ -1,217 +1,232 @@
-// frontend/js/app.js
+const API = 'http://127.0.0.1:5000';
 
-const API_URL      = 'http://127.0.0.1:5000/expenses';
-let allExpenses   = [];
-let currentPage   = 1;
-const pageSize    = 10;
-let sortField     = 'data_registro';
-let sortAsc       = false;
+let allExpenses = [];
+let categories = [];
+let chart;
 
-// DOM elements
-const tableBody     = document.querySelector('#expenses-table tbody');
-const form          = document.getElementById('expense-form');
-const valorInput    = document.getElementById('valor');
-const descInput     = document.getElementById('descricao');
-const catInput      = document.getElementById('categoria');
-const filterSelect  = document.getElementById('filter-category');
-const totalSpentEl  = document.getElementById('total-spent');
-const byCategoryEl  = document.getElementById('by-category');
-const chartCtx      = document.getElementById('category-chart').getContext('2d');
-const fromDateEl    = document.getElementById('filter-from');
-const toDateEl      = document.getElementById('filter-to');
-const searchEl      = document.getElementById('search-desc');
-const applyFilters  = document.getElementById('apply-filters');
-const resetFilters  = document.getElementById('reset-filters');
-const paginationEl  = document.getElementById('pagination');
-const cancelBtn     = document.getElementById('cancel-btn');
-const descCountEl   = document.getElementById('desc-count');
-const oldCheckbox   = document.getElementById('old-expense');
-const dateInput     = document.getElementById('expense-date');
-const toastContainer= document.getElementById('toast-container');
-let categoryChart;
+const el = {
+  filterCats: document.getElementById('filter-categories'),
+  desc: document.getElementById('filter-description'),
+  start: document.getElementById('filter-start'),
+  end: document.getElementById('filter-end'),
+  formFilter: document.getElementById('filter-form'),
+  btnReset: document.getElementById('reset-filters'),
+  btnNew: document.getElementById('btn-new'),
+  tableBody: document.querySelector('#expenses-table tbody'),
+  totalSpent: document.getElementById('total-spent'),
+  listByCat: document.getElementById('list-by-category'),
+  chartCanvas: document.getElementById('chart-canvas'),
+  formCard: document.getElementById('form-card'),
+  formTitle: document.getElementById('form-title'),
+  expenseForm: document.getElementById('expense-form'),
+  expId: document.getElementById('expense-id'),
+  expValue: document.getElementById('expense-value'),
+  expDesc: document.getElementById('expense-desc'),
+  expCat: document.getElementById('expense-cat'),
+  expOld: document.getElementById('expense-old'),
+  dateGroup: document.getElementById('date-group'),
+  dateInput: document.getElementById('expense-date'),
+  catForm: document.getElementById('category-form'),
+  catName: document.getElementById('category-name'),
+};
 
-console.log('app.js carregado!');
-
-// Contador de caracteres da descrição
-descInput.addEventListener('input', () => {
-  descCountEl.textContent = descInput.value.length;
+window.addEventListener('DOMContentLoaded', () => {
+  loadCategories();
+  loadExpenses();
+  setupListeners();
 });
 
-// Habilita/desabilita campo de data
-oldCheckbox.addEventListener('change', () => {
-  dateInput.disabled = !oldCheckbox.checked;
-});
-
-// Impede reload ao pressionar Enter nos filtros
-document.getElementById('filters').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
+function setupListeners() {
+  el.formFilter.addEventListener('submit', (e) => {
     e.preventDefault();
-    applyFilters.click();
-  }
-});
-
-// Toast helper
-function showToast(msg, type = 'success') {
-  const id = 't' + Date.now();
-  toastContainer.insertAdjacentHTML('beforeend', `
-    <div id="${id}" class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">${msg}</div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-      </div>
-    </div>
-  `);
-  new bootstrap.Toast(document.getElementById(id), { delay: 3000 }).show();
+    applyFilters();
+  });
+  el.btnReset.addEventListener('click', resetFilters);
+  el.btnNew.addEventListener('click', () => showForm());
+  el.expOld.addEventListener('change', () => {
+    el.dateGroup.style.display = el.expOld.checked ? 'block' : 'none';
+  });
+  el.expenseForm.addEventListener('submit', saveExpense);
+  el.catForm.addEventListener('submit', saveCategory);
 }
 
-// Filtros e Reset
-if (filterSelect && applyFilters) {
-  applyFilters.addEventListener('click', () => { currentPage = 1; applyAllTransforms(); });
-  resetFilters.addEventListener('click', () => {
-    filterSelect.value = '';
-    fromDateEl.value = '';
-    toDateEl.value = '';
-    searchEl.value = '';
-    currentPage = 1;
-    applyAllTransforms();
+async function loadCategories() {
+  const res = await fetch(`${API}/categories`);
+  categories = await res.json();
+  renderCategoryFilters();
+  renderCategoryOptions();
+}
+
+function renderCategoryFilters() {
+  el.filterCats.innerHTML = '';
+  categories.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'form-check';
+    div.innerHTML = `
+      <input class="form-check-input" type="checkbox" value="${c}" id="fcat-${c}">
+      <label class="form-check-label" for="fcat-${c}">${c}</label>`;
+    el.filterCats.appendChild(div);
   });
 }
 
-document.addEventListener('DOMContentLoaded', loadExpenses);
+function renderCategoryOptions() {
+  el.expCat.innerHTML = '<option value="">Selecione...</option>';
+  categories.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    el.expCat.appendChild(opt);
+  });
+}
 
 async function loadExpenses() {
-  try {
-    const res = await fetch(API_URL);
-    allExpenses = await res.json();
-    currentPage = 1;
-    applyAllTransforms();
-  } catch {
-    showToast('Falha ao carregar despesas', 'danger');
+  const res = await fetch(`${API}/expenses`);
+  allExpenses = await res.json();
+  applyFilters(); // render inicial
+}
+
+function applyFilters() {
+  let filtered = [...allExpenses];
+
+  // categorias
+  const checked = Array.from(
+    el.filterCats.querySelectorAll('input:checked')
+  ).map(i => i.value);
+  if (checked.length) filtered = filtered.filter(e => checked.includes(e.categoria));
+
+  // descrição
+  const desc = el.desc.value.toLowerCase().trim();
+  if (desc) filtered = filtered.filter(e => e.descricao.toLowerCase().includes(desc));
+
+  // data
+  if (el.start.value) {
+    const dtStart = new Date(el.start.value);
+    filtered = filtered.filter(e => new Date(e.data_registro) >= dtStart);
   }
+  if (el.end.value) {
+    const dtEnd = new Date(el.end.value);
+    filtered = filtered.filter(e => new Date(e.data_registro) <= dtEnd);
+  }
+
+  renderTable(filtered);
+  renderSummary(filtered);
+  renderChart(filtered);
 }
 
-function applyAllTransforms() {
-  let data = [...allExpenses];
-
-  // Categoria
-  if (filterSelect.value) data = data.filter(e => e.categoria === filterSelect.value);
-  // Data
-  if (fromDateEl.value) data = data.filter(e => e.data_registro >= fromDateEl.value);
-  if (toDateEl.value)   data = data.filter(e => e.data_registro <= toDateEl.value);
-  // Busca
-  const q = searchEl.value.toLowerCase();
-  if (q) data = data.filter(e => e.descricao.toLowerCase().includes(q));
-  // Ordenação
-  data.sort((a,b) => a[sortField] < b[sortField] ? (sortAsc ? -1 : 1) : (a[sortField] > b[sortField] ? (sortAsc ? 1 : -1) : 0));
-
-  renderSummary(data);
-  renderChart(data);
-  renderTablePage(data);
-  renderPagination(data.length);
+function resetFilters() {
+  el.desc.value = '';
+  el.start.value = '';
+  el.end.value = '';
+  el.filterCats.querySelectorAll('input').forEach(i => i.checked = false);
+  applyFilters();
 }
 
-function renderSummary(data) {
-  const total = data.reduce((s,e) => s + e.valor, 0);
-  totalSpentEl.textContent = `R$ ${total.toFixed(2)}`;
-  const byCat = data.reduce((acc,e) => { acc[e.categoria] = (acc[e.categoria]||0)+e.valor; return acc; }, {});
-  byCategoryEl.innerHTML = Object.entries(byCat)
-    .map(([cat,v]) => `<li>${cat}: R$ ${v.toFixed(2)} (${((v/total)*100).toFixed(1)}%)</li>`)
-    .join('');
-}
-
-function renderChart(data) {
-  const byCat = data.reduce((acc,e) => { acc[e.categoria] = (acc[e.categoria]||0)+e.valor; return acc; }, {});
-  const labels = Object.keys(byCat), values = Object.values(byCat);
-  if (categoryChart) categoryChart.destroy();
-  categoryChart = new Chart(chartCtx, { type:'pie', data:{labels,datasets:[{data:values}]}, options:{responsive:true,plugins:{legend:{position:'bottom'}}} });
-}
-
-function renderTablePage(data) {
-  const start = (currentPage-1)*pageSize;
-  const slice = data.slice(start,start+pageSize);
-  tableBody.innerHTML = '';
-  slice.forEach(e => {
+function renderTable(data) {
+  el.tableBody.innerHTML = '';
+  data.forEach(e => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${e.valor.toFixed(2)}</td>
+      <td>R$ ${e.valor.toFixed(2)}</td>
       <td>${e.descricao}</td>
       <td>${e.categoria}</td>
       <td>${new Date(e.data_registro).toLocaleString('pt-BR')}</td>
       <td>
-        <button class="btn btn-sm btn-warning me-2" onclick="startEdit(${e.id})">Editar</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.id})">Excluir</button>
+        <button class="btn btn-warning btn-sm me-1" onclick="editExpense(${e.id})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteExpense(${e.id})">Excluir</button>
       </td>`;
-    tableBody.appendChild(tr);
+    el.tableBody.appendChild(tr);
   });
 }
 
-function renderPagination(total) {
-  const pages = Math.ceil(total/pageSize);
-  paginationEl.innerHTML = '';
-  for (let i=1;i<=pages;i++) {
+function renderSummary(data) {
+  // total gasto
+  const total = data.reduce((s, e) => s + e.valor, 0);
+  el.totalSpent.textContent = `R$ ${total.toFixed(2)}`;
+
+  // por categoria
+  const sums = {};
+  data.forEach(e => sums[e.categoria] = (sums[e.categoria]||0) + e.valor);
+  el.listByCat.innerHTML = '';
+  for (let [cat, val] of Object.entries(sums)) {
     const li = document.createElement('li');
-    li.className = `page-item ${i===currentPage?'active':''}`;
-    li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-    li.onclick = e => { e.preventDefault(); currentPage=i; applyAllTransforms(); };
-    paginationEl.appendChild(li);
+    const pct = ((val/total)*100).toFixed(1);
+    li.textContent = `${cat}: R$ ${val.toFixed(2)} (${pct}%)`;
+    el.listByCat.appendChild(li);
   }
 }
 
-function sortTable(field) { sortField===field?sortAsc=!sortAsc:(sortField=field,sortAsc=true); applyAllTransforms(); }
-function scrollToForm(){ document.getElementById('expense-form').scrollIntoView({behavior:'smooth'}); }
+function renderChart(data) {
+  const sums = {};
+  data.forEach(e => sums[e.categoria] = (sums[e.categoria]||0) + e.valor);
+  const labels = Object.keys(sums), values = Object.values(sums);
 
-// CRUD
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  const payload = { valor: parseFloat(valorInput.value), descricao: descInput.value, categoria: catInput.value };
-  if (oldCheckbox.checked && dateInput.value) payload.data_registro = dateInput.value;
-  let method='POST', url=API_URL;
-  if (form.dataset.editId) { method='PUT'; url=`${API_URL}/${form.dataset.editId}`; }
-  try {
-    const res = await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if (!res.ok) throw new Error();
-    resetForm(); loadExpenses(); showToast('Despesa salva com sucesso!');
-  } catch { showToast('Erro ao salvar despesa','danger'); }
-});
-
-window.startEdit = async id => {
-  try {
-    const res = await fetch(`${API_URL}/${id}`);
-    if (!res.ok) throw new Error();
-    const e = await res.json();
-    form.dataset.editId = id;
-    document.getElementById('form-title').textContent='Editando Despesa';
-    document.getElementById('submit-btn').textContent='Atualizar';
-    cancelBtn.style.display='inline-block';
-    valorInput.value=e.valor;
-    descInput.value=e.descricao;
-    catInput.value=e.categoria;
-    descCountEl.textContent=e.descricao.length;
-    if (e.data_registro) {
-      oldCheckbox.checked = true;
-      dateInput.disabled = false;
-      dateInput.value = new Date(e.data_registro).toISOString().slice(0,16);
+  if (chart) chart.destroy();
+  chart = new Chart(el.chartCanvas, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1'] }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom' } }
     }
-    scrollToForm();
-  } catch { showToast('Despesa não encontrada','warning'); }
+  });
+}
+
+function showForm() {
+  el.formTitle.textContent = 'Nova Despesa';
+  el.expenseForm.reset();
+  el.expId.value = '';
+  el.dateGroup.style.display = 'none';
+  el.formCard.style.display = 'block';
+}
+
+async function saveExpense(evt) {
+  evt.preventDefault();
+  const e = {
+    valor: parseFloat(el.expValue.value),
+    descricao: el.expDesc.value,
+    categoria: el.expCat.value,
+    data_registro: el.expOld.checked ? el.dateInput.value : null
+  };
+  const id = el.expId.value;
+  const method = id ? 'PUT' : 'POST';
+  const url = `${API}/expenses${id?'/'+id:''}`;
+  await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(e) });
+  el.formCard.style.display = 'none';
+  loadExpenses();
+}
+
+window.editExpense = async function(id) {
+  const res = await fetch(`${API}/expenses/${id}`);
+  const e = await res.json();
+  el.expId.value = e.id;
+  el.expValue.value = e.valor;
+  el.expDesc.value = e.descricao;
+  el.expCat.value = e.categoria;
+  el.expOld.checked = !!e.data_registro;
+  el.dateGroup.style.display = el.expOld.checked ? 'block' : 'none';
+  if (e.data_registro) {
+    el.dateInput.value = e.data_registro.replace(' ', 'T').slice(0,16);
+  }
+  el.formTitle.textContent = 'Editando Despesa';
+  el.formCard.style.display = 'block';
 };
 
-cancelBtn.addEventListener('click', () => { resetForm(); showToast('Edição cancelada','secondary'); });
-
-window.deleteExpense = async id => {
+window.deleteExpense = async function(id) {
   if (!confirm('Confirma exclusão?')) return;
-  try { await fetch(`${API_URL}/${id}`,{method:'DELETE'}); loadExpenses(); showToast('Despesa excluída'); }
-  catch { showToast('Erro ao excluir','danger'); }
+  await fetch(`${API}/expenses/${id}`, { method:'DELETE' });
+  loadExpenses();
 };
 
-function resetForm() {
-  delete form.dataset.editId;
-  document.getElementById('form-title').textContent='Nova Despesa';
-  document.getElementById('submit-btn').textContent='Salvar';
-  cancelBtn.style.display='none';
-  form.reset();
-  descCountEl.textContent='0';
-  oldCheckbox.checked=false;
-  dateInput.disabled=true;
-  dateInput.value='';
+async function saveCategory(evt) {
+  evt.preventDefault();
+  const name = el.catName.value.trim();
+  if (!name) return;
+  await fetch(`${API}/categories`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ name })
+  });
+  el.catName.value = '';
+  loadCategories();
+  loadExpenses();
 }

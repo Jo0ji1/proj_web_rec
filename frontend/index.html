@@ -2,114 +2,100 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DespesaApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DespesasApp</title>
+  <!-- Ícone vazio pra evitar 404 -->
+  <link rel="icon" href="data:;base64,=">
+
+  <!-- Google Font Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
 
   <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-..."
-    crossorigin="anonymous"
-  />
+  <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
 
-  <!-- Google Font -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-    rel="stylesheet"
-  />
-
-  <!-- CSS custom -->
-  <link rel="stylesheet" href="css/styles.css" />
+  <!-- Seu CSS -->
+  <link href="css/styles.css" rel="stylesheet"/>
 </head>
-<body class="d-flex flex-column min-vh-100">
-
+<body>
   <!-- HEADER -->
-  <header class="bg-primary text-white py-3 shadow-sm">
-    <div class="container d-flex justify-content-between align-items-center">
-      <h1 class="h4 m-0">DespesaApp</h1>
-      <button class="btn btn-light" onclick="scrollToForm()">+ Nova Despesa</button>
+  <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <div class="container">
+      <span class="navbar-brand mb-0 h1">DespesasApp</span>
     </div>
-  </header>
+  </nav>
 
-  <!-- TOAST CONTAINER -->
-  <div class="position-fixed top-0 end-0 p-3" style="z-index:1111">
-    <div id="toast-container"></div>
-  </div>
-
-  <!-- MAIN -->
-  <main class="container flex-fill py-4">
+  <main class="container-lg my-5">
+    <!-- SUMÁRIO & GRÁFICO -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-6">
+        <div class="card summary-card bg-primary text-white shadow-sm">
+          <div class="card-body">
+            <h6 class="card-subtitle">TOTAL GASTO</h6>
+            <h2 id="total-spent" class="fw-bold">R$ 0,00</h2>
+          </div>
+        </div>
+        <div class="card summary-card mt-3 shadow-sm">
+          <div class="card-body">
+            <h6 class="card-subtitle">POR CATEGORIA</h6>
+            <ul id="list-by-category" class="summary-list mt-2 mb-0"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column">
+            <h6 class="card-subtitle mb-3">GASTOS POR CATEGORIA</h6>
+            <div class="flex-fill d-flex align-items-center justify-content-center">
+              <canvas id="chart-canvas" style="max-height:250px;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- FILTROS -->
-    <div class="card mb-4">
+    <div class="card mb-5 shadow-sm">
       <div class="card-body">
-        <form id="filters" class="row g-3 align-items-end">
-          <div class="col-md-3">
-            <label for="filter-category" class="form-label">Categoria</label>
-            <select id="filter-category" class="form-select">
-              <option value="">Todas</option>
-              <option>Alimentação</option>
-              <option>Transporte</option>
-              <option>Lazer</option>
-              <option>Contas</option>
-            </select>
+        <h5 class="mb-4">Filtros</h5>
+        <form id="filter-form" class="row gx-3 gy-2 align-items-end">
+          <!-- categorias inline, duas linhas -->
+          <div id="filter-categories" class="col-12 d-flex flex-wrap gap-3 mb-3"></div>
+
+          <div class="col-md-4">
+            <label for="filter-description" class="form-label">Descrição</label>
+            <input type="text" id="filter-description" class="form-control" placeholder="Ex: mercado, gás...">
           </div>
           <div class="col-md-3">
-            <label for="filter-from" class="form-label">De</label>
-            <input type="date" id="filter-from" class="form-control" />
+            <label for="filter-start" class="form-label">Data início</label>
+            <input type="datetime-local" id="filter-start" class="form-control">
           </div>
           <div class="col-md-3">
-            <label for="filter-to" class="form-label">Até</label>
-            <input type="date" id="filter-to" class="form-control" />
+            <label for="filter-end" class="form-label">Data fim</label>
+            <input type="datetime-local" id="filter-end" class="form-control">
           </div>
-          <div class="col-md-3">
-            <label for="search-desc" class="form-label">Descrição</label>
-            <input type="text" id="search-desc" class="form-control" placeholder="Buscar..." />
-          </div>
-          <div class="col-12 text-end">
-            <button type="button" id="apply-filters" class="btn btn-outline-primary me-2">Aplicar Filtros</button>
-            <button type="button" id="reset-filters" class="btn btn-secondary">Limpar</button>
+          <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Aplicar</button>
+            <button type="button" id="reset-filters" class="btn btn-secondary mt-2">Limpar</button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- RESUMO E GRÁFICO -->
-    <div class="row mb-4 g-4" id="summary-panel">
-      <div class="col-md-4">
-        <div class="card text-white bg-primary h-100">
-          <div class="card-body">
-            <h5 class="card-title">Total Gasto</h5>
-            <p id="total-spent" class="display-6">R$ 0,00</p>
-          </div>
+    <!-- TABELA DE DESPESAS -->
+    <div class="card mb-5 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Despesas</h5>
+          <button id="btn-new" class="btn btn-success">Nova Despesa</button>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card text-white bg-secondary h-100">
-          <div class="card-body">
-            <h5 class="card-title">Por Categoria</h5>
-            <ul id="by-category" class="list-unstyled mb-0"></ul>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4 d-flex align-items-center">
-        <div class="chart-container w-100">
-          <canvas id="category-chart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- TABELA -->
-    <div class="card mb-4">
-      <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" id="expenses-table">
-            <thead class="table-light">
+          <table class="table table-hover" id="expenses-table">
+            <thead class="table-dark">
               <tr>
-                <th onclick="sortTable('valor')">Valor (R$)</th>
-                <th onclick="sortTable('descricao')">Descrição</th>
-                <th onclick="sortTable('categoria')">Categoria</th>
-                <th onclick="sortTable('data_registro')">Data</th>
+                <th>Valor</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Data</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -117,73 +103,67 @@
           </table>
         </div>
       </div>
-      <div class="card-footer bg-white border-top-0">
-        <nav aria-label="Paginação">
-          <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
-        </nav>
-      </div>
     </div>
 
-    <!-- FORMULÁRIO -->
-    <div class="card mb-4" id="form-section">
+    <!-- FORMULÁRIO DE DESPESA -->
+    <div id="form-card" class="card mb-5 shadow-sm" style="display:none">
       <div class="card-body">
-        <h2 id="form-title" class="h5 mb-3">Nova Despesa</h2>
-        <form id="expense-form" class="row g-3">
-
-          <!-- Valor, Descrição, Categoria -->
+        <h5 id="form-title" class="mb-4">Nova Despesa</h5>
+        <form id="expense-form" class="row gx-3 gy-2 align-items-end">
+          <input type="hidden" id="expense-id">
           <div class="col-md-3">
-            <label for="valor" class="form-label">Valor (R$)</label>
-            <input type="number" step="0.01" id="valor" class="form-control" required />
-          </div>
-          <div class="col-md-5">
-            <label for="descricao" class="form-label">
-              Descrição <small class="text-muted">(máx. 50)</small>
-            </label>
-            <input type="text" id="descricao" class="form-control" maxlength="50" required />
-            <div class="form-text text-end">
-              <span id="desc-count">0</span>/50
-            </div>
+            <label for="expense-value" class="form-label">Valor</label>
+            <input type="number" id="expense-value" class="form-control" step="0.01" min="0" required>
           </div>
           <div class="col-md-4">
-            <label for="categoria" class="form-label">Categoria</label>
-            <select id="categoria" class="form-select" required>
-              <option value="">Escolha...</option>
-              <option>Alimentação</option>
-              <option>Transporte</option>
-              <option>Lazer</option>
-              <option>Contas</option>
-            </select>
+            <label for="expense-desc" class="form-label">Descrição</label>
+            <input type="text" id="expense-desc" class="form-control" maxlength="50" required>
           </div>
-
-          <!-- Despesa Antiga e Escolha de Data/Hora -->
-          <div class="col-md-3 form-check mt-3">
-            <input type="checkbox" id="old-expense" class="form-check-input" />
-            <label for="old-expense" class="form-check-label">Despesa antiga?</label>
+          <div class="col-md-3">
+            <label for="expense-cat" class="form-label">Categoria</label>
+            <select id="expense-cat" class="form-select" required></select>
           </div>
-          <div class="col-md-5">
+          <div class="col-md-2">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="expense-old">
+              <label class="form-check-label" for="expense-old">Despesa antiga</label>
+            </div>
+          </div>
+          <div class="col-md-4" id="date-group" style="display:none;">
             <label for="expense-date" class="form-label">Data/Hora</label>
-            <input type="datetime-local" id="expense-date" class="form-control" disabled />
+            <input type="datetime-local" id="expense-date" class="form-control">
           </div>
-
-          <!-- Botões -->
           <div class="col-12 text-end">
-            <button type="submit" class="btn btn-primary" id="submit-btn">Salvar</button>
-            <button type="button" class="btn btn-secondary" id="cancel-btn" style="display:none">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- FORMULÁRIO DE CATEGORIA -->
+    <div class="card mb-5 shadow-sm">
+      <div class="card-body">
+        <h5 class="mb-4">Nova Categoria</h5>
+        <form id="category-form" class="row gx-3 gy-2 align-items-end">
+          <div class="col-md-8">
+            <input type="text" id="category-name" class="form-control" placeholder="Nome da nova categoria" required>
+          </div>
+          <div class="col-md-4 text-end">
+            <button type="submit" class="btn btn-outline-primary w-100">Adicionar</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 
   <!-- FOOTER -->
-  <footer class="bg-white text-center small py-3 mt-auto border-top">
-    &copy; 2025 DespesaApp
+  <footer class="bg-dark text-white text-center py-3">
+    &copy; 2025 DespesasApp
   </footer>
 
   <!-- SCRIPTS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="lib/chart.js/dist/chart.umd.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
