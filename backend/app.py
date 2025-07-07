@@ -1,14 +1,17 @@
 import os
+import pymysql
+pymysql.install_as_MySQLdb()  # usa pymysql como driver MySQLdb
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
-# --- App e Configurações ---
+# --- Configuração da aplicação ---
 app = Flask(__name__)
 CORS(app)
 
-# Lê DATABASE_URL, mas se vier vazia ou None, usa sqlite local
+# Lê DATABASE_URL (MySQL no Railway). Se não definida, usa SQLite local.
 db_url = os.getenv('DATABASE_URL') or 'sqlite:///db.sqlite3'
 print(f'>>> Conectando via SQLALCHEMY_DATABASE_URI = {db_url}')
 
@@ -107,7 +110,12 @@ def create_expense():
     if not Category.query.get(categoria):
         return jsonify(error='Categoria inválida'), 400
 
-    e = Expense(valor=valor, descricao=descricao, categoria=categoria, data_registro=dreg)
+    e = Expense(
+        valor=valor,
+        descricao=descricao,
+        categoria=categoria,
+        data_registro=dreg
+    )
     db.session.add(e)
     db.session.commit()
     return jsonify(id=e.id), 201
