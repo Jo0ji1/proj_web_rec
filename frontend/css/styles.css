@@ -1,0 +1,59 @@
+/* css/styles.css */
+
+/* Importa Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+:root {
+  --bs-primary: #4e73df;
+  --bs-secondary: #1cc88a;
+  --bs-light: #f8f9fc;
+  --bs-dark: #5a5c69;
+  --font-sans: 'Inter', sans-serif;
+}
+
+/* Reset + tipografia */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bs-light);
+  color: var(--bs-dark);
+}
+
+/* Header */
+header {
+  margin-bottom: 1rem;
+}
+
+/* Form labels com peso */
+.form-label {
+  font-weight: 600;
+}
+
+/* Chart container para limitar tamanho */
+.chart-container {
+  max-width: 100%;
+  height: 250px;
+}
+
+/* Cards de resumo */
+#summary-panel .card {
+  min-height: 150px;
+}
+
+/* Hover no cabeçalho da tabela */
+.table thead th {
+  cursor: pointer;
+}
+.table thead th:hover {
+  text-decoration: underline;
+}
+
+/* Espaçamento da paginação */
+.pagination {
+  margin: 0;
+}
+
+/* Footer */
+footer {
+  background-color: #fff;
+}
