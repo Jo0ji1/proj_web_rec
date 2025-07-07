@@ -1,6 +1,6 @@
 # 📊 DespesasApp
 
-Um **sistema de registro de despesas pessoais** simplificado, desenvolvido como atividade de recuperação para a disciplina de Desenvolvimento Web. Permite anotar, categorizar e visualizar seus gastos de forma dinâmica, responsiva e intuitiva.
+Um **sistema de registro de despesas pessoais** simplificado, desenvolvido para a disciplina de Desenvolvimento Web. Permite anotar, categorizar e visualizar seus gastos de forma dinâmica, responsiva e intuitiva.
 
 ---
 
