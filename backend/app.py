@@ -2,6 +2,7 @@ import sqlite3
 import os
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
+from sqlalchemy import text
 
 app = Flask(__name__)
 CORS(app)
@@ -44,6 +45,15 @@ def init_db():
 
 with app.app_context(): init_db()
 
+@app.route('/health')
+def health_check():
+    try:
+        # executa um SELECT 1 simples
+        db.session.execute(text('SELECT 1'))
+        return jsonify(status='ok', db='connected')
+    except Exception as e:
+        return jsonify(status='error', db=str(e)), 500
+        
 @app.route('/expenses', methods=['GET'])
 def list_expenses():
     cat = request.args.get('categories')
