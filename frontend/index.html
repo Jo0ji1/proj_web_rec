@@ -137,13 +137,17 @@
             />
           </div>
           <div class="col-md-5">
-            <label for="descricao" class="form-label">Descrição</label>
+            <label for="descricao" class="form-label">Descrição <small class="text-muted">(máx. 50)</small></label>
             <input
               type="text"
               id="descricao"
               class="form-control"
+              maxlength="50"
               required
             />
+            <div class="form-text text-end">
+              <span id="desc-count">0</span>/50
+            </div>
           </div>
           <div class="col-md-4">
             <label for="categoria" class="form-label">Categoria</label>
@@ -172,6 +176,10 @@
       </div>
     </div>
   </main>
+
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 11">
+    <div id="toast-container"></div>
+  </div>
 
   <!-- FOOTER -->
   <footer class="bg-white text-center small py-3 mt-auto border-top">
