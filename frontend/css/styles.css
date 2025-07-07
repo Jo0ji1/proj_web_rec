@@ -11,7 +11,6 @@
   --font-sans: 'Inter', sans-serif;
 }
 
-/* Reset + tipografia */
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -19,28 +18,23 @@ body {
   color: var(--bs-dark);
 }
 
-/* Header */
 header {
   margin-bottom: 1rem;
 }
 
-/* Form labels com peso */
 .form-label {
   font-weight: 600;
 }
 
-/* Chart container para limitar tamanho */
 .chart-container {
   max-width: 100%;
   height: 250px;
 }
 
-/* Cards de resumo */
 #summary-panel .card {
   min-height: 150px;
 }
 
-/* Hover no cabeçalho da tabela */
 .table thead th {
   cursor: pointer;
 }
@@ -48,18 +42,15 @@ header {
   text-decoration: underline;
 }
 
-/* Espaçamento da paginação */
 .pagination {
   margin: 0;
 }
 
-/* Footer */
 footer {
   background-color: #fff;
 }
 
-
-/* Toasts personalizados */
+/* Toasts */
 .toast {
   min-width: 250px;
 }
