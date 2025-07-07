@@ -4,27 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>DespesasApp</title>
-  <!-- Ícone vazio pra evitar 404 -->
   <link rel="icon" href="data:;base64,=">
-
-  <!-- Google Font Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
-
-  <!-- Bootstrap CSS -->
   <link href="lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"/>
-
-  <!-- Seu CSS -->
   <link href="css/styles.css" rel="stylesheet"/>
 </head>
 <body>
+  <!-- LOADING OVERLAY -->
+  <div id="loading-overlay" class="d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1200">
+    <div id="toast-container"></div>
+  </div>
+
   <!-- HEADER -->
-  <nav class="navbar navbar-dark bg-dark shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container">
       <span class="navbar-brand mb-0 h1">DespesasApp</span>
+      <div class="ms-auto d-flex align-items-center">
+        <button id="export-csv"      class="btn btn-outline-light btn-sm me-2" aria-label="Exportar CSV">📥 CSV</button>
+        <button id="btn-new"         class="btn btn-success btn-sm me-2">Nova Despesa</button>
+        <button id="theme-toggle"    class="btn btn-outline-light btn-sm" aria-label="Alternar tema">🌙</button>
+      </div>
     </div>
   </nav>
 
   <main class="container-lg my-5">
+    <div id="global-alerts"></div>
+
     <!-- SUMÁRIO & GRÁFICO -->
     <div class="row g-4 mb-5">
       <div class="col-md-6">
@@ -53,54 +63,62 @@
       </div>
     </div>
 
-    <!-- FILTROS -->
-    <div class="card mb-5 shadow-sm">
-      <div class="card-body">
-        <h5 class="mb-4">Filtros</h5>
-        <form id="filter-form" class="row gx-3 gy-2 align-items-end">
-          <!-- categorias inline, duas linhas -->
-          <div id="filter-categories" class="col-12 d-flex flex-wrap gap-3 mb-3"></div>
-
-          <div class="col-md-4">
-            <label for="filter-description" class="form-label">Descrição</label>
-            <input type="text" id="filter-description" class="form-control" placeholder="Ex: mercado, gás...">
-          </div>
-          <div class="col-md-3">
-            <label for="filter-start" class="form-label">Data início</label>
-            <input type="datetime-local" id="filter-start" class="form-control">
-          </div>
-          <div class="col-md-3">
-            <label for="filter-end" class="form-label">Data fim</label>
-            <input type="datetime-local" id="filter-end" class="form-control">
-          </div>
-          <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Aplicar</button>
-            <button type="button" id="reset-filters" class="btn btn-secondary mt-2">Limpar</button>
-          </div>
-        </form>
+    <!-- FILTROS (COLLAPSE EM MOBILE) -->
+    <button class="btn btn-outline-secondary mb-3 d-md-none" 
+            data-bs-toggle="collapse" data-bs-target="#filter-collapse">
+      🔍 Filtros
+    </button>
+    <div id="filter-collapse" class="collapse d-md-block mb-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-4">Filtros</h5>
+          <form id="filter-form" class="row gx-3 gy-2 align-items-end">
+            <div id="filter-categories" class="col-12 d-flex flex-wrap gap-2 mb-3"></div>
+            <div class="col-md-4">
+              <label for="filter-description" class="form-label">Descrição</label>
+              <input type="text" id="filter-description" class="form-control" placeholder="Ex: mercado, gás...">
+            </div>
+            <div class="col-md-3">
+              <label for="filter-start" class="form-label">Data início</label>
+              <input type="datetime-local" id="filter-start" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label for="filter-end" class="form-label">Data fim</label>
+              <input type="datetime-local" id="filter-end" class="form-control">
+            </div>
+            <div class="col-md-2 d-grid">
+              <button type="submit" class="btn btn-primary">Aplicar</button>
+              <button type="button" id="reset-filters" class="btn btn-secondary mt-2">Limpar</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 
     <!-- TABELA DE DESPESAS -->
-    <div class="card mb-5 shadow-sm">
+    <div class="card mb-3 shadow-sm">
       <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5 class="mb-0">Despesas</h5>
-          <button id="btn-new" class="btn btn-success">Nova Despesa</button>
-        </div>
+        <h5 class="card-title">Despesas</h5>
         <div class="table-responsive">
           <table class="table table-hover" id="expenses-table">
+            <caption class="visually-hidden">Lista de despesas pessoais</caption>
             <thead class="table-dark">
               <tr>
-                <th>Valor</th>
-                <th>Descrição</th>
-                <th>Categoria</th>
-                <th>Data</th>
+                <th role="button" onclick="sortBy('valor')">Valor ↕</th>
+                <th role="button" onclick="sortBy('descricao')">Descrição ↕</th>
+                <th role="button" onclick="sortBy('categoria')">Categoria ↕</th>
+                <th role="button" onclick="sortBy('data_registro')">Data ↕</th>
                 <th>Ações</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+          <nav aria-label="Paginação">
+            <ul id="pagination" class="pagination mb-0"></ul>
+          </nav>
+          <button id="btn-new-bottom" class="btn btn-success btn-sm">Nova Despesa</button>
         </div>
       </div>
     </div>
@@ -109,22 +127,25 @@
     <div id="form-card" class="card mb-5 shadow-sm" style="display:none">
       <div class="card-body">
         <h5 id="form-title" class="mb-4">Nova Despesa</h5>
-        <form id="expense-form" class="row gx-3 gy-2 align-items-end">
+        <form id="expense-form" class="row gx-3 gy-2 align-items-end" novalidate>
           <input type="hidden" id="expense-id">
           <div class="col-md-3">
             <label for="expense-value" class="form-label">Valor</label>
-            <input type="number" id="expense-value" class="form-control" step="0.01" min="0" required>
+            <input type="number" id="expense-value" class="form-control" step="0.01" min="0.01" required>
+            <div class="invalid-feedback"></div>
           </div>
           <div class="col-md-4">
             <label for="expense-desc" class="form-label">Descrição</label>
             <input type="text" id="expense-desc" class="form-control" maxlength="50" required>
+            <div class="invalid-feedback"></div>
           </div>
           <div class="col-md-3">
             <label for="expense-cat" class="form-label">Categoria</label>
             <select id="expense-cat" class="form-select" required></select>
+            <div class="invalid-feedback"></div>
           </div>
           <div class="col-md-2">
-            <div class="form-check form-switch">
+            <div class="form-check form-switch mt-2">
               <input class="form-check-input" type="checkbox" id="expense-old">
               <label class="form-check-label" for="expense-old">Despesa antiga</label>
             </div>
@@ -132,6 +153,7 @@
           <div class="col-md-4" id="date-group" style="display:none;">
             <label for="expense-date" class="form-label">Data/Hora</label>
             <input type="datetime-local" id="expense-date" class="form-control">
+            <div class="invalid-feedback"></div>
           </div>
           <div class="col-12 text-end">
             <button type="submit" class="btn btn-primary">Salvar</button>
@@ -144,9 +166,10 @@
     <div class="card mb-5 shadow-sm">
       <div class="card-body">
         <h5 class="mb-4">Nova Categoria</h5>
-        <form id="category-form" class="row gx-3 gy-2 align-items-end">
+        <form id="category-form" class="row gx-3 gy-2 align-items-end" novalidate>
           <div class="col-md-8">
             <input type="text" id="category-name" class="form-control" placeholder="Nome da nova categoria" required>
+            <div class="invalid-feedback"></div>
           </div>
           <div class="col-md-4 text-end">
             <button type="submit" class="btn btn-outline-primary w-100">Adicionar</button>
@@ -161,7 +184,6 @@
     &copy; 2025 DespesasApp
   </footer>
 
-  <!-- SCRIPTS -->
   <script src="lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
   <script src="lib/chart.js/dist/chart.umd.js"></script>
   <script src="js/app.js"></script>

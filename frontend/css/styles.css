@@ -1,43 +1,71 @@
-/* Fonte moderna */
-body {
-  font-family: 'Inter', sans-serif;
-  background: #f5f7fa;
-  color: #343a40;
-  margin: 0;
+/* styles.css */
+/* Variáveis de tema */
+:root {
+  --bg: #f5f7fa;
+  --fg: #343a40;
+  --card-bg: #fff;
+  --card-shadow: rgba(0,0,0,0.1);
+  --primary: #0d6efd;
+}
+[data-theme="dark"] {
+  --bg: #212529;
+  --fg: #e9ecef;
+  --card-bg: #2c2f33;
+  --card-shadow: rgba(0,0,0,0.5);
+  --primary: #375a7f;
 }
 
-/* Container principal */
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+}
 main {
   min-height: calc(100vh - 112px); /* header + footer */
 }
 
-/* Sumário */
-.card.summary-card {
+/* Loading overlay */
+#loading-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* Toast container */
+.toast {
+  margin-bottom: 0.5rem;
+}
+
+/* Cards */
+.card {
+  background: var(--card-bg);
   border-radius: 0.75rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px var(--card-shadow);
 }
-
-/* Subtítulo apenas em cards de fundo escuro (e.g., Total Gasto) */
-.bg-primary .card-subtitle {
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.95);
+.summary-card {
+  margin-bottom: 1rem;
 }
-
-/* Subtítulo padrão para todos os demais cards de fundo claro */
 .card-subtitle {
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
-  color: #343a40;
+  color: var(--fg);
+}
+.bg-primary .card-subtitle {
+  color: rgba(255,255,255,0.85);
 }
 
-/* Lista de resumo */
+/* Lista resumo */
 .summary-list li {
   display: flex;
   justify-content: space-between;
-  padding: 0.15rem 0;
+  padding: 0.2rem 0;
   font-size: 0.9rem;
 }
 .summary-list li span {
@@ -57,10 +85,16 @@ main {
   background-color: #343a40 !important;
 }
 .table-hover tbody tr:hover {
-  background-color: #dfe2e5;
+  background-color: rgba(0,0,0,0.05);
 }
 
 /* Formulários */
+.form-control, .form-select {
+  border-radius: 0.5rem;
+}
+.invalid-feedback {
+  display: block;
+}
 #form-card {
   animation: fadeIn 0.3s ease-out;
 }
@@ -69,35 +103,75 @@ main {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Inputs e selects */
-.form-control,
-.form-select {
-  border-radius: 0.5rem;
-}
-
-/* Ajuste geral de bordas nos cards */
-.card {
-  border-radius: 0.75rem;
-}
+/* Botões */
+.btn-primary { background-color: var(--primary); border: none; }
+.btn-outline-primary { border-radius: 0.5rem; }
+.btn-secondary, .btn-success { border: none; }
 
 /* Footer */
 footer {
   font-size: 0.9rem;
 }
 
-/* Botões personalizados */
-.btn-primary {
-  background-color: #0d6efd;
-  border: none;
+/* Pagination */
+.pagination .page-item .page-link {
+  color: var(--primary);
 }
-.btn-secondary {
-  background-color: #6c757d;
-  border: none;
+.pagination .page-item.active .page-link {
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
-.btn-success {
-  background-color: #198754;
-  border: none;
+.pagination .page-item.disabled .page-link {
+  color: rgba(0,0,0,0.5);
+  pointer-events: none;
 }
-.btn-outline-primary {
-  border-radius: 0.5rem;
+/* Dark mode toggle */
+#theme-toggle {
+  position: fixed;
+  top: 1rem; right: 1rem;
+  z-index: 1000;
+  background: var(--card-bg);
+  border-radius: 50%;
+  padding: 0.5rem;
+  box-shadow: 0 2px 6px var(--card-shadow);
+}
+/* Dark mode toggle icon */
+#theme-toggle i {
+  color: var(--fg);
+  font-size: 1.2rem;
+  transition: color 0.3s ease;
+}
+/* Dark mode toggle hover effect */
+#theme-toggle:hover i {
+  color: var(--primary);
+}
+/* Dark mode toggle active state */
+#theme-toggle.active i {
+  color: var(--primary);
+}
+/* Dark mode toggle transition */
+#theme-toggle {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+/* Dark mode toggle active state */
+#theme-toggle.active {
+  background: var(--primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+/* Dark mode toggle active icon */
+#theme-toggle.active i {
+  color: var(--fg);
+}
+/* Dark mode toggle active hover effect */
+#theme-toggle.active:hover i {
+  color: rgba(255,255,255,0.85);
+}
+/* Dark mode toggle focus state */
+#theme-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(13,110,253,0.5);
+}
+/* Dark mode toggle focus active state */
+#theme-toggle.active:focus {
+  box-shadow: 0 0 0 2px rgba(13,110,253,0.5);
 }
