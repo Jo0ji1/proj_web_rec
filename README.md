@@ -55,28 +55,6 @@ Um **sistema de registro de despesas pessoais** simplificado, desenvolvido como 
 
 ---
 
-## 📂 Estrutura de Pastas
-
-/root
-├─ backend/
-│ ├─ app.py # aplicação Flask + models + rotas
-│ ├─ requirements.txt # dependências Python
-│ ├─ migrations/ # versões do esquema de BD
-│ └─ Procfile # start: gunicorn app:app
-├─ frontend/
-│ ├─ css/
-│ │ └─ styles.css # estilos customizados (variáveis de tema, cards, tabelas)
-│ ├─ lib/ # bibliotecas estáticas (Bootstrap, Chart.js)
-│ ├─ js/
-│ │ └─ app.js # lógica de UI + chamadas à API + gráficos
-│ ├─ index.html # interface principal
-│ ├─ package.json # http-server para deploy NPM/Nixpacks
-│ └─ Dockerfile # (opcional) container para servir estático
-└─ README.md # documentação do projeto
-
-
----
-
 ## ⚙️ Como Rodar Localmente
 
 ### Backend
